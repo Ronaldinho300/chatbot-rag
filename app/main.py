@@ -9,13 +9,20 @@ from flask import (
 )
 
 import os
+import sys
+
+# Agregar la ruta actual al path para importaciones relativas
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from chatbot import Chatbot
 
 
 app = Flask(__name__)
 
+# Precargamos el bot con la identidad al iniciar
+print("[INFO] Inicializando chatbot...")
 bot = Chatbot()
+print("[INFO] Chatbot listo. Identidad cargada.")
 
 
 UPLOAD_FOLDER = (

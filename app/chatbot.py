@@ -2,7 +2,7 @@
 
 from loaders import Loader
 from embeddings import Embeddings
-from app.data.vectorstores.vectorstore import VectorStore
+from data.vectorstores.vectorstore import VectorStore
 from LangChain import configurar_cadena_rag
 
 
