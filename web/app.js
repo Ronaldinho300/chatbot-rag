@@ -1,51 +1,86 @@
+// 👇 CAMBIA ESTA URL POR LA DE TU API EN RENDER (sin barra al final)
+const API_BASE_URL = 'https://chatbot-rag-1-u4jn.onrender.com';  // ← tu URL real
+
+let currentDocument = 'documento'; // nombre por defecto (sin extensión)
+
 const sendBtn = document.getElementById('send-btn');
 const input = document.getElementById('user-input');
 const chatBox = document.getElementById('chat-content');
+const fileInput = document.getElementById('file-upload');
 
+// Función para agregar mensajes al chat
+function addMessage(text, isUser = false) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `msg ${isUser ? 'user' : 'bot'}`;
+    msgDiv.innerHTML = text;
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return msgDiv;
+}
+
+// Enviar pregunta al chatbot
 async function enviar() {
     const texto = input.value.trim();
     if (!texto) return;
 
-    // Agregar burbuja del usuario
-    chatBox.innerHTML += `<div class="msg user">${texto}</div>`;
+    addMessage(texto, true);
     input.value = '';
-    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Indicador de carga
+    const loadingMsg = addMessage('🤔 Pensando...', false);
 
     try {
-        // Se comunica con el backend de Python (Puerto 5000)
-        const res = await fetch('http://127.0.0.1:5000/ask', {
+        const res = await fetch(`${API_BASE_URL}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pregunta: texto })
+            body: JSON.stringify({
+                pregunta: texto,
+                documento: currentDocument
+            })
         });
         const data = await res.json();
-        
-        // Agregar respuesta del Bot
-        chatBox.innerHTML += `<div class="msg bot">${data.respuesta}</div>`;
-    } catch (e) {
-        chatBox.innerHTML += `<div class="msg bot">⚠️ Error: Inicia el servidor de Python primero.</div>`;
+        loadingMsg.remove();
+        addMessage(data.respuesta || 'No se obtuvo respuesta.', false);
+    } catch (error) {
+        loadingMsg.remove();
+        addMessage('⚠️ Error de conexión con el servidor. Verifica que la API esté activa.', false);
+    }
+}
+
+// Subir archivo a la API
+async function uploadFile(file) {
+    if (!file) return;
+
+    const uploadMsg = addMessage(`📄 Subiendo <b>${file.name}</b> ...`, true);
+
+    const formData = new FormData();
+    formData.append('archivo', file);
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+            // Extraer nombre base sin extensión
+            const baseName = file.name.replace(/\.[^/.]+$/, '');
+            currentDocument = baseName;
+            uploadMsg.innerHTML = `✅ Documento <b>${file.name}</b> procesado. Ahora puedes preguntar sobre él.`;
+        } else {
+            uploadMsg.innerHTML = `❌ Error: ${data.error || 'No se pudo procesar el archivo.'}`;
+        }
+    } catch (error) {
+        uploadMsg.innerHTML = `❌ Error de conexión al subir el archivo.`;
     }
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// Eventos
 sendBtn.onclick = enviar;
-input.onkeypress = (e) => { if(e.key === 'Enter') enviar(); };
-// Lógica para el selector de archivos
-document.getElementById('file-upload').addEventListener('change', function(e) {
+input.onkeypress = (e) => { if (e.key === 'Enter') enviar(); };
+fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
-    if (file) {
-        const chatContent = document.getElementById('chat-content');
-        
-        // Crear una burbuja de mensaje indicando que se subió un archivo
-        const fileMsg = document.createElement('div');
-        fileMsg.className = 'msg user';
-        fileMsg.innerHTML = `📄 <b>Archivo seleccionado:</b> ${file.name}`;
-        
-        chatContent.appendChild(fileMsg);
-        
-        // Auto-scroll hacia abajo
-        chatContent.scrollTop = chatContent.scrollHeight;
-        
-        console.log("Archivo listo para procesar:", file.name);
-    }
+    if (file) uploadFile(file);
+    fileInput.value = ''; // permite volver a subir el mismo archivo
 });
