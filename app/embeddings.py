@@ -1,62 +1,67 @@
-# Crear los embeddings (vectores numéricos) del texto.
-# app/embeddings.py
+# Crear los embeddings (vectores numéricos) del texto.# app/embeddings.py
 
-import fasttext
-import numpy as np
+from langchain_huggingface import (
+    HuggingFaceEmbeddings
+)
 
 
 class Embeddings:
 
-    def __init__(self,
-                 model_path="models/cc.es.300.bin"):
 
-        """
-        Carga modelo FastText
-        una sola vez
-        """
+    def __init__(self):
 
-        self.model = fasttext.load_model(
-            model_path
+        self.modelo = (
+
+            HuggingFaceEmbeddings(
+
+                model_name=
+
+                "sentence-transformers/all-MiniLM-L6-v2"
+
+            )
+
         )
+
 
 
     def texto_a_vector(
+
             self,
+
             texto):
 
-        """
-        Convierte texto
-        → embedding promedio
-        """
 
-        palabras = texto.split()
+        vector = (
 
+            self.modelo.embed_query(
 
-        if not palabras:
+                texto
 
-            return np.zeros(
-                self.model.get_dimension()
             )
-
-
-        vectores = [
-
-            self.model.get_word_vector(
-                palabra
-            )
-
-            for palabra in palabras
-
-        ]
-
-
-        embedding = np.mean(
-
-            vectores,
-
-            axis=0
 
         )
 
 
-        return embedding.tolist()
+        return vector
+
+
+
+    def textos_a_vectores(
+
+            self,
+
+            textos):
+
+
+        vectores = (
+
+            self.modelo.embed_documents(
+
+                textos
+
+            )
+
+        )
+
+
+        return vectores
