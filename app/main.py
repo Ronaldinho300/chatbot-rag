@@ -1,5 +1,6 @@
 # Envía respuesta:
 # app/main.py
+# app/main.py
 
 from flask import (
     Flask,
@@ -19,25 +20,26 @@ bot = Chatbot()
 
 UPLOAD_FOLDER = (
 
-    "data/uploads"
+    "app/data/uploads"
 
 )
 
 
 os.makedirs(
 
-    UPLOAD_FOLDER,
+UPLOAD_FOLDER,
 
-    exist_ok=True
+exist_ok=True
 
 )
 
 
+
 @app.route(
 
-    "/upload",
+"/upload",
 
-    methods=["POST"]
+methods=["POST"]
 
 )
 
@@ -71,13 +73,9 @@ def upload():
     )
 
 
-    respuesta = (
+    bot.cargar_documento(
 
-        bot.cargar_documento(
-
-            ruta
-
-        )
+        ruta
 
     )
 
@@ -88,7 +86,7 @@ def upload():
 
             "mensaje":
 
-            respuesta
+            "Documento procesado"
 
         }
 
@@ -98,9 +96,9 @@ def upload():
 
 @app.route(
 
-    "/chat",
+"/chat",
 
-    methods=["POST"]
+methods=["POST"]
 
 )
 
@@ -146,76 +144,8 @@ def chat():
 
 
 
-@app.route(
-
-    "/history",
-
-    methods=["GET"]
-
-)
-
-def history():
-
-
-    ruta = (
-
-        "history/conversaciones/chat.txt"
-
-    )
-
-
-    if not os.path.exists(
-
-            ruta):
-
-
-        return jsonify(
-
-            {
-
-                "historial":
-
-                ""
-
-            }
-
-        )
-
-
-
-    with open(
-
-        ruta,
-
-        "r",
-
-        encoding="utf-8"
-
-    ) as archivo:
-
-
-        historial = (
-
-            archivo.read()
-
-        )
-
-
-    return jsonify(
-
-        {
-
-            "historial":
-
-            historial
-
-        }
-
-    )
-
-
-
 if __name__ == "__main__":
+
 
     app.run(
 

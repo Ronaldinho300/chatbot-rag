@@ -1,12 +1,15 @@
 #Guardar embeddings y hacer búsqueda semántica.
 # app/vectorstore.py# app/vectorstore.py
+# app/vectorstore.py
 
 from langchain_community.vectorstores import FAISS
 
 import os
 
 
+
 class VectorStore:
+
 
 
     def guardar(
@@ -20,18 +23,23 @@ class VectorStore:
             nombre):
 
 
-        db = FAISS.from_texts(
 
-            texts=textos,
+        db = (
 
-            embedding=embeddings.modelo
+            FAISS.from_texts(
+
+                textos,
+
+                embeddings.modelo
+
+            )
 
         )
 
 
         ruta = (
 
-            f"data/vectorstores/{nombre}"
+f"app/data/vectorstores/{nombre}"
 
         )
 
@@ -43,7 +51,7 @@ class VectorStore:
         )
 
 
-        return ruta
+        return db
 
 
 
@@ -56,9 +64,10 @@ class VectorStore:
             nombre):
 
 
+
         ruta = (
 
-            f"data/vectorstores/{nombre}"
+f"app/data/vectorstores/{nombre}"
 
         )
 
@@ -71,43 +80,17 @@ class VectorStore:
             return None
 
 
-        db = FAISS.load_local(
 
-            ruta,
+        return (
 
-            embeddings.modelo,
+            FAISS.load_local(
 
-            allow_dangerous_deserialization=True
+                ruta,
 
-        )
+                embeddings.modelo,
 
-
-        return db
-
-
-
-    def buscar(
-
-            self,
-
-            db,
-
-            pregunta,
-
-            k=3):
-
-
-        resultados = (
-
-            db.similarity_search(
-
-                pregunta,
-
-                k=k
+                allow_dangerous_deserialization=True
 
             )
 
         )
-
-
-        return resultados

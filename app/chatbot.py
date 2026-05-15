@@ -1,22 +1,10 @@
-# Orquestar todo usando LangChain.
-# Pregunta usuario
-
-#↓
-#Usa loaders.py (si necesita documentos)
-#↓
-#Usa embeddings.py
-#↓
-#Usa vectorstore.py
-#↓
-#Usa LangChain.py
-#↓
-#Genera respuesta 
 # app/chatbot.py
 
 from loaders import Loader
 from embeddings import Embeddings
-from vectorstore import VectorStore
-from LangChain import LangChainConfig
+from app.data.vectorstores.vectorstore import VectorStore
+from LangChain import configurar_cadena_rag
+
 
 
 class Chatbot:
@@ -24,33 +12,12 @@ class Chatbot:
 
     def __init__(self):
 
+
         self.loader = Loader()
 
         self.embedding = Embeddings()
 
-        self.vectorstore = VectorStore()
-
-        self.langchain = LangChainConfig()
-
-
-        # personalidad fija bot
-
-        with open(
-
-            "data/identidad_bot.txt",
-
-            "r",
-
-            encoding="utf-8"
-
-        ) as archivo:
-
-
-            self.identidad = (
-
-                archivo.read()
-
-            )
+        self.store = VectorStore()
 
 
 
@@ -58,38 +25,40 @@ class Chatbot:
 
             self,
 
-            ruta_documento,
+            ruta,
 
-            nombre_vectorstore="documento"):
+            nombre="documento"):
+
 
 
         texto = (
 
             self.loader.cargar_archivo(
 
-                ruta_documento
+                ruta
 
             )
 
         )
 
 
-        self.vectorstore.guardar(
+        db = (
 
-            textos=[texto],
+            self.store.guardar(
 
-            embeddings=self.embedding,
+                textos=[texto],
 
-            nombre=nombre_vectorstore
+                embeddings=self.embedding,
 
-        )
+                nombre=nombre
 
-
-        return (
-
-            "Documento procesado"
+            )
 
         )
+
+
+        return db
+
 
 
 
@@ -99,30 +68,28 @@ class Chatbot:
 
             pregunta,
 
-            nombre_vectorstore="documento"):
+            nombre="documento"):
 
 
 
-        db = (
+        vector_db = (
 
-            self.vectorstore.cargar(
+            self.store.cargar(
 
                 self.embedding,
 
-                nombre_vectorstore
+                nombre
 
             )
 
         )
 
 
-        contexto = (
+        chain = (
 
-            self.vectorstore.buscar(
+            configurar_cadena_rag(
 
-                db,
-
-                pregunta
+                vector_db
 
             )
 
@@ -131,69 +98,13 @@ class Chatbot:
 
         respuesta = (
 
-            self.langchain.generar_respuesta(
+            chain.run(
 
-                pregunta=pregunta,
-
-                contexto=contexto,
-
-                personalidad=self.identidad
+                pregunta
 
             )
-
-        )
-
-
-        self.guardar_historial(
-
-            pregunta,
-
-            respuesta
 
         )
 
 
         return respuesta
-
-
-
-    def guardar_historial(
-
-            self,
-
-            pregunta,
-
-            respuesta):
-
-
-        with open(
-
-            "history/conversaciones/chat.txt",
-
-            "a",
-
-            encoding="utf-8"
-
-        ) as archivo:
-
-
-
-            archivo.write(
-
-f"""
-
-Usuario:
-
-{pregunta}
-
-
-Bot:
-
-{respuesta}
-
-
-------------------------
-
-"""
-
-            )
