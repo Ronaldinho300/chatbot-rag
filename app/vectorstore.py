@@ -1,34 +1,44 @@
 #Guardar embeddings y hacer búsqueda semántica.
-# app/vectorstore.py
+# app/vectorstore.py# app/vectorstore.py
 
-import numpy as np
+from langchain_community.vectorstores import FAISS
+
 import os
 
 
 class VectorStore:
 
 
-    def guardar_vectores(
+    def guardar(
 
             self,
 
-            nombre,
+            textos,
 
-            vectores):
+            embeddings,
+
+            nombre):
 
 
-        ruta = (
+        db = FAISS.from_texts(
 
-            f"data/vectorstores/{nombre}.npy"
+            texts=textos,
+
+            embedding=embeddings.modelo
 
         )
 
 
-        np.save(
+        ruta = (
 
-            ruta,
+            f"data/vectorstores/{nombre}"
 
-            vectores
+        )
+
+
+        db.save_local(
+
+            ruta
 
         )
 
@@ -37,16 +47,18 @@ class VectorStore:
 
 
 
-    def cargar_vectores(
+    def cargar(
 
             self,
+
+            embeddings,
 
             nombre):
 
 
         ruta = (
 
-            f"data/vectorstores/{nombre}.npy"
+            f"data/vectorstores/{nombre}"
 
         )
 
@@ -55,13 +67,47 @@ class VectorStore:
 
                 ruta):
 
+
             return None
 
 
-        return np.load(
+        db = FAISS.load_local(
 
             ruta,
 
-            allow_pickle=True
+            embeddings.modelo,
+
+            allow_dangerous_deserialization=True
 
         )
+
+
+        return db
+
+
+
+    def buscar(
+
+            self,
+
+            db,
+
+            pregunta,
+
+            k=3):
+
+
+        resultados = (
+
+            db.similarity_search(
+
+                pregunta,
+
+                k=k
+
+            )
+
+        )
+
+
+        return resultados
