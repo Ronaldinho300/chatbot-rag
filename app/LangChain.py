@@ -4,29 +4,33 @@ from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 
 def configurar_cadena_rag(vector_db):
-    # 1. Configuramos el Modelo de Lenguaje (LLM)
-    # Usamos Gemini 1.5 Flash por su rapidez y precisión
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
+    # 1. Cargamos la identidad desde el archivo TXT
+    try:
+        with open('app/data/identidad_bot.txt', 'r', encoding='utf-8') as f:
+            instrucciones_bot = f.read()
+    except FileNotFoundError:
+        # Por si el archivo no existe, dejamos un respaldo
+        instrucciones_bot = "Eres un asistente experto."
 
-    # 2. Creamos un "Prompt" personalizado (Instrucciones para la IA)
-    template = """Eres un asistente experto de SENATI. Utiliza únicamente el siguiente contexto para responder la pregunta. 
-    Si no sabes la respuesta, di que no lo sabes, no inventes información.
+    # 2. Creamos el Template usando las instrucciones cargadas
+    template = f"""{instrucciones_bot}
     
-    Contexto: {context}
-    Pregunta: {question}
+    Contexto: {{context}}
+    Pregunta: {{question}}
     
-    Respuesta útil y técnica:"""
+    Respuesta útil:"""
     
     PROMPT = PromptTemplate(
         template=template, input_variables=["context", "question"]
     )
 
-    # 3. Orquestamos el flujo con RetrievalQA
-    # Esto une el LLM + El Recuperador (Base Vectorial) + El Prompt
+    # 3. Configuramos el LLM y la cadena
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
+
     chain = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
-        retriever=vector_db.as_retriever(search_kwargs={"k": 3}), # Recupera los 3 fragmentos más relevantes
+        retriever=vector_db.as_retriever(search_kwargs={"k": 3}),
         chain_type_kwargs={"prompt": PROMPT}
     )
     
