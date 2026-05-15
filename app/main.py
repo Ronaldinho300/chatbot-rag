@@ -4,651 +4,177 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
+import tempfile  # 🆕 para manejo de archivos temporales
 
-# Importar chatbot
-from chatbot import Chatbot
-
-
-# ======================
-# Cargar .env
-# ======================
-
+# ==========================
+# Cargar variables .env
+# ==========================
 load_dotenv()
 
+# ==========================
+# Import chatbot
+# ==========================
+from chatbot import Chatbot
 
-# ======================
-# Crear app Flask
-# ======================
-
+# ==========================
+# Crear aplicación Flask
+# ==========================
 app = Flask(__name__)
 
+# ==========================
+# Configurar CORS (CORREGIDO)
+# ==========================
+# Permite cualquier origen, método y header
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# ======================
-# Configurar CORS
-# ======================
-
-CORS(
-
-    app,
-
-    origins=os.getenv(
-
-        "CORS_ORIGINS",
-
-        "*"
-
-    ).split(",")
-
-)
-
-
-# ======================
-# Configuración archivos
-# ======================
-
+# ==========================
+# Configuración uploads
+# ==========================
 UPLOAD_FOLDER = os.path.abspath(
-
-    os.getenv(
-
-        "UPLOAD_FOLDER",
-
-        "app/data/uploads"
-
-    )
-
+    os.getenv("UPLOAD_FOLDER", "app/data/uploads")
 )
-
-
 MAX_CONTENT_LENGTH = int(
-
-    os.getenv(
-
-        "MAX_CONTENT_LENGTH",
-
-        52428800
-
-    )
-
+    os.getenv("MAX_CONTENT_LENGTH", 52428800)
 )
 
-
-os.makedirs(
-
-    UPLOAD_FOLDER,
-
-    exist_ok=True
-
-)
-
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 
+# ==========================
+# Lazy loading chatbot
+# ==========================
+bot = None
 
-# ======================
-# Inicializar chatbot
-# ======================
+def obtener_bot():
+    global bot
+    if bot is None:
+        print("[INFO] Inicializando chatbot...")
+        bot = Chatbot()
+        print("[INFO] Chatbot listo")
+    return bot
 
-print(
-
-"[INFO] Inicializando chatbot..."
-
-)
-
-
-try:
-
-
-    bot = Chatbot()
-
-
-    print(
-
-        "[INFO] Chatbot listo"
-
-    )
-
-
-except Exception as e:
-
-
-    print(
-
-        f"[ERROR] {e}"
-
-    )
-
-
-    bot = None
-
-
-# ======================
-# HEALTH
-# ======================
-
-@app.route(
-
-"/health",
-
-methods=["GET"]
-
-)
-
+# ==========================
+# HEALTH CHECK (mejorado)
+# ==========================
+@app.route("/health", methods=["GET"])
 def health():
-
-    return jsonify(
-
-        {
-
-            "status":
-
-            "healthy",
-
-            "bot_ready":
-
-            bot is not None
-
-        }
-
-    ),200
-
-
-# ======================
-# INDEX
-# ======================
-
-@app.route(
-
-"/",
-
-methods=["GET"]
-
-)
-
-def index():
-
-    return jsonify(
-
-        {
-
-            "nombre":
-
-            "Chatbot RAG API",
-
-            "version":
-
-            "1.0.0",
-
-
-            "endpoints":
-
-            {
-
-                "health":
-
-                "/health",
-
-
-                "upload":
-
-                "/upload",
-
-
-                "chat":
-
-                "/chat"
-
-            }
-
-        }
-
-    )
-
-
-# ======================
-# SUBIR ARCHIVOS
-# ======================
-
-@app.route(
-
-"/upload",
-
-methods=["POST"]
-
-)
-
-def upload():
-
-
     try:
+        bot_instance = obtener_bot()
+        bot_ready = bot_instance is not None
+    except Exception:
+        bot_ready = False
+    return jsonify({"status": "healthy", "chatbot": bot_ready}), 200
 
+# ==========================
+# INDEX
+# ==========================
+@app.route("/", methods=["GET"])
+def index():
+    return jsonify({
+        "nombre": "Chatbot RAG API",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/health",
+            "upload": "/upload",
+            "chat": "/chat"
+        }
+    }), 200
 
-        if bot is None:
-
-
-            return jsonify(
-
-                {
-
-                    "error":
-
-                    "Chatbot no iniciado"
-
-                }
-
-            ),503
-
-
+# ==========================
+# SUBIR ARCHIVO (CORREGIDO con tempfile)
+# ==========================
+@app.route("/upload", methods=["POST"])
+def upload():
+    try:
+        chatbot = obtener_bot()
 
         if "archivo" not in request.files:
+            return jsonify({"error": "Archivo no enviado"}), 400
 
+        archivo = request.files["archivo"]
 
-            return jsonify(
+        if archivo.filename == "":
+            return jsonify({"error": "Archivo vacío"}), 400
 
-                {
-
-                    "error":
-
-                    "Archivo no enviado"
-
-                }
-
-            ),400
-
-
-
-        archivo = request.files[
-
-            "archivo"
-
-        ]
-
-
-
-        if archivo.filename=="":
-
-
-            return jsonify(
-
-                {
-
-                    "error":
-
-                    "Archivo vacío"
-
-                }
-
-            ),400
-
-
-
-        extensiones = {
-
-            ".pdf",
-
-            ".txt",
-
-            ".docx"
-
-        }
-
-
-
-        extension = os.path.splitext(
-
-            archivo.filename
-
-        )[1].lower()
-
-
+        extensiones = {".pdf", ".txt", ".docx"}
+        extension = os.path.splitext(archivo.filename)[1].lower()
 
         if extension not in extensiones:
+            return jsonify({"error": "Formato no permitido"}), 400
 
+        # Guardar el archivo en un temporal (evita 502 por disco)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as tmp:
+            archivo.save(tmp.name)
+            tmp_path = tmp.name
 
-            return jsonify(
+        nombre_base = os.path.splitext(archivo.filename)[0]
 
-                {
+        try:
+            chatbot.cargar_documento(tmp_path, nombre=nombre_base)
+        finally:
+            # Limpiar: borrar el archivo temporal después de procesarlo
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
 
-                    "error":
-
-                    "Formato no permitido"
-
-                }
-
-            ),400
-
-
-
-        ruta = os.path.join(
-
-            UPLOAD_FOLDER,
-
-            archivo.filename
-
-        )
-
-
-
-        archivo.save(
-
-            ruta
-
-        )
-
-
-
-        bot.cargar_documento(
-
-            ruta,
-
-            nombre=
-
-            os.path.splitext(
-
-                archivo.filename
-
-            )[0]
-
-        )
-
-
-
-        return jsonify(
-
-            {
-
-                "mensaje":
-
-                "Documento procesado",
-
-
-                "archivo":
-
-                archivo.filename
-
-            }
-
-        ),200
-
-
+        return jsonify({
+            "mensaje": "Documento cargado",
+            "archivo": archivo.filename
+        }), 200
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-
-        return jsonify(
-
-            {
-
-                "error":
-
-                str(
-
-                    e
-
-                )
-
-            }
-
-        ),500
-
-
-# ======================
+# ==========================
 # CHAT
-# ======================
-
-@app.route(
-
-"/chat",
-
-methods=["POST"]
-
-)
-
+# ==========================
+@app.route("/chat", methods=["POST"])
 def chat():
-
-
-
     try:
-
-
-
-        if bot is None:
-
-
-            return jsonify(
-
-                {
-
-                    "error":
-
-                    "Chatbot no iniciado"
-
-                }
-
-            ),503
-
-
+        chatbot = obtener_bot()
 
         datos = request.get_json()
-
-
-
         if not datos:
+            return jsonify({"error": "JSON vacío"}), 400
 
+        pregunta = datos.get("pregunta", "").strip()
+        if pregunta == "":
+            return jsonify({"error": "Pregunta vacía"}), 400
 
-            return jsonify(
+        documento = datos.get("documento", "documento")
 
-                {
+        respuesta = chatbot.responder(pregunta, nombre=documento)
 
-                    "error":
-
-                    "JSON vacío"
-
-                }
-
-            ),400
-
-
-
-        pregunta = datos.get(
-
-            "pregunta",
-
-            ""
-
-        ).strip()
-
-
-
-        if pregunta=="":
-
-
-            return jsonify(
-
-                {
-
-                    "error":
-
-                    "Pregunta vacía"
-
-                }
-
-            ),400
-
-
-
-        documento = datos.get(
-
-            "documento",
-
-            "documento"
-
-        )
-
-
-
-        respuesta = bot.responder(
-
-            pregunta,
-
-            nombre=documento
-
-        )
-
-
-
-        return jsonify(
-
-            {
-
-                "pregunta":
-
-                pregunta,
-
-
-                "respuesta":
-
-                respuesta
-
-            }
-
-        ),200
-
-
+        return jsonify({
+            "pregunta": pregunta,
+            "respuesta": respuesta
+        }), 200
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# ==========================
+# ERROR 404
+# ==========================
+@app.errorhandler(404)
+def error404(e):
+    return jsonify({"error": "Ruta no encontrada"}), 404
 
-        return jsonify(
+# ==========================
+# ERROR 500
+# ==========================
+@app.errorhandler(500)
+def error500(e):
+    return jsonify({"error": "Error interno servidor"}), 500
 
-            {
-
-                "error":
-
-                str(
-
-                    e
-
-                )
-
-            }
-
-        ),500
-
-
-# ======================
-# ERRORS
-# ======================
-
-@app.errorhandler(
-
-404
-
-)
-
-def error404(
-
-e
-
-):
-
-
-    return jsonify(
-
-        {
-
-            "error":
-
-            "Ruta no encontrada"
-
-        }
-
-    ),404
-
-
-
-@app.errorhandler(
-
-500
-
-)
-
-def error500(
-
-e
-
-):
-
-
-    return jsonify(
-
-        {
-
-            "error":
-
-            "Error servidor"
-
-        }
-
-    ),500
-
-
-# ======================
+# ==========================
 # EJECUTAR
-# ======================
-
-if __name__=="__main__":
-
-
-    debug = (
-
-        os.getenv(
-
-            "DEBUG",
-
-            "False"
-
-        ).lower()
-
-        ==
-
-        "true"
-
-    )
-
-
-
-    host = os.getenv(
-
-        "HOST",
-
-        "0.0.0.0"
-
-    )
-
-
-
-    port = int(
-
-        os.getenv(
-
-            "PORT",
-
-            5000
-
-        )
-
-    )
-
-
-
+# ==========================
+if __name__ == "__main__":
+    debug = os.getenv("FLASK_ENV", "production") == "development"
     app.run(
-
-        host=host,
-
-        port=port,
-
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 5000)),
         debug=debug
-
     )
