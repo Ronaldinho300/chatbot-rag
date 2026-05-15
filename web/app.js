@@ -1,167 +1,102 @@
 // ==========================
 // URL API
 // ==========================
-const API_BASE_URL =
-    'https://chatbot-rag-1-u4jn.onrender.com';
+const API_BASE_URL = 'https://chatbot-rag-1-u4jn.onrender.com';
 
 // ==========================
-// Documento actual
+// Estado del documento actual
+// null = sin documento cargado → backend usa solo identidad
 // ==========================
-let currentDocument = 'documento';
+let currentDocument = null;
 
 // ==========================
 // Elementos DOM
 // ==========================
-const sendBtn =
-    document.getElementById('send-btn');
-
-const input =
-    document.getElementById('user-input');
-
-const chatBox =
-    document.getElementById('chat-content');
-
-const fileInput =
-    document.getElementById('file-upload');
+const sendBtn   = document.getElementById('send-btn');
+const input     = document.getElementById('user-input');
+const chatBox   = document.getElementById('chat-content');
+const fileInput = document.getElementById('file-upload');
+const statusDot = document.getElementById('status-dot');
+const statusTxt = document.getElementById('status-text');
 
 // ==========================
-// Agregar mensajes
+// Estado de la API
 // ==========================
-function addMessage(
-    text,
-    isUser = false
-) {
+function setStatus(estado) {
+    // estado: 'online' | 'offline' | 'loading'
+    const labels = {
+        online:  'En línea',
+        offline: 'No disponible',
+        loading: 'Conectando…'
+    };
+    if (statusDot) statusDot.dataset.status = estado;
+    if (statusTxt) statusTxt.textContent = labels[estado] ?? estado;
+}
 
-    const msgDiv =
-        document.createElement('div');
-
-    msgDiv.className =
-        `msg ${isUser ? 'user' : 'bot'}`;
-
+// ==========================
+// Agregar mensajes al chat
+// ==========================
+function addMessage(text, isUser = false) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `msg ${isUser ? 'user' : 'bot'}`;
     msgDiv.innerHTML = text;
-
     chatBox.appendChild(msgDiv);
-
-    chatBox.scrollTop =
-        chatBox.scrollHeight;
-
+    chatBox.scrollTop = chatBox.scrollHeight;
     return msgDiv;
 }
 
 // ==========================
-// Validar respuesta JSON
+// Parse JSON seguro
 // ==========================
 async function safeJson(res) {
-
     const text = await res.text();
-
     try {
         return JSON.parse(text);
-    }
-
-    catch {
-
-        return {
-            error:
-                'Respuesta inválida del servidor'
-        };
+    } catch {
+        return { error: 'Respuesta inválida del servidor' };
     }
 }
 
 // ==========================
-// Enviar mensaje
+// Enviar mensaje al chat
 // ==========================
 async function enviar() {
-
-    const texto =
-        input.value.trim();
-
+    const texto = input.value.trim();
     if (!texto) return;
 
     addMessage(texto, true);
-
     input.value = '';
 
-    // ==========================
-    // Loading
-    // ==========================
-    const loadingMsg =
-        addMessage(
-            '🤔 Pensando...',
-            false
-        );
+    const loadingMsg = addMessage('🤔 Pensando...', false);
+
+    // Body: si no hay documento cargado, no se envía el campo
+    // para que el backend use solo la identidad del bot.
+    const body = { pregunta: texto };
+    if (currentDocument) body.documento = currentDocument;
 
     try {
+        const res = await fetch(`${API_BASE_URL}/chat`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(body)
+        });
 
-        const res = await fetch(
-            `${API_BASE_URL}/chat`,
-            {
-                method: 'POST',
-
-                headers: {
-                    'Content-Type':
-                        'application/json'
-                },
-
-                body: JSON.stringify({
-                    pregunta: texto,
-                    documento: currentDocument
-                })
-            }
-        );
-
-        const data =
-            await safeJson(res);
-
+        const data = await safeJson(res);
         loadingMsg.remove();
 
-        // ==========================
-        // Error servidor
-        // ==========================
         if (!res.ok) {
-
-            addMessage(
-                `❌ Error: ${
-                    data.error ||
-                    'Error interno servidor'
-                }`,
-                false
-            );
-
+            addMessage(`❌ Error: ${data.error || 'Error del servidor'}`, false);
             return;
         }
 
-        // ==========================
-        // Mostrar respuesta
-        // ==========================
-        addMessage(
-            data.respuesta ||
-            'No se obtuvo respuesta.',
-            false
-        );
-    }
+        addMessage(data.respuesta || 'Sin respuesta.', false);
 
-    catch (error) {
-
-        console.error(error);
-
+    } catch (err) {
+        console.error('[CHAT ERROR]', err);
         loadingMsg.remove();
-
         addMessage(
-            `
-            ❌ Error de conexión.
-
-            Posibles causas:
-            <br><br>
-
-            • API caída
-            <br>
-            • Error CORS
-            <br>
-            • Backend en Render dormido
-            <br>
-            • Error interno Flask
-            `,
+            '❌ No se pudo conectar con el servidor.<br>' +
+            'Puede que la API esté iniciando (Render free tarda ~30 s). Intenta de nuevo.',
             false
         );
     }
@@ -171,164 +106,79 @@ async function enviar() {
 // Subir archivo
 // ==========================
 async function uploadFile(file) {
-
     if (!file) return;
 
-    // ==========================
-    // Mostrar subida
-    // ==========================
-    const uploadMsg =
-        addMessage(
-            `📄 Subiendo <b>${file.name}</b>...`,
-            true
-        );
+    const uploadMsg = addMessage(`📄 Subiendo <b>${file.name}</b>…`, true);
 
-    // ==========================
-    // FormData
-    // ==========================
     const formData = new FormData();
-
-    formData.append(
-        'archivo',
-        file
-    );
+    formData.append('archivo', file);
 
     try {
+        const res = await fetch(`${API_BASE_URL}/upload`, {
+            method: 'POST',
+            body:   formData
+            // ⚠️ NO pongas Content-Type aquí; el navegador lo pone
+            //    automáticamente con el boundary correcto para multipart.
+        });
 
-        const res = await fetch(
-            `${API_BASE_URL}/upload`,
-            {
-                method: 'POST',
-                body: formData
-            }
-        );
+        const data = await safeJson(res);
 
-        const data =
-            await safeJson(res);
-
-        // ==========================
-        // Error backend
-        // ==========================
         if (!res.ok) {
-
             uploadMsg.innerHTML =
-                `
-                ❌ Error:
-                ${data.error ||
-                'No se pudo procesar'}
-                `;
-
+                `❌ No se pudo procesar: ${data.error || 'Error del servidor'}`;
             return;
         }
 
-        // ==========================
-        // Documento actual
-        // ==========================
-        const baseName =
-            file.name.replace(
-                /\.[^/.]+$/,
-                ''
-            );
-
-        currentDocument =
-            baseName;
-
-        // ==========================
-        // Éxito
-        // ==========================
-        uploadMsg.innerHTML =
-            `
-            ✅ Documento
-            <b>${file.name}</b>
-            procesado correctamente.
-            <br><br>
-            Ahora puedes hacer preguntas.
-            `;
-    }
-
-    catch (error) {
-
-        console.error(error);
+        // Guardar nombre base del documento (sin extensión)
+        currentDocument = file.name.replace(/\.[^/.]+$/, '');
 
         uploadMsg.innerHTML =
-            `
-            ❌ Error al subir archivo.
+            `✅ <b>${file.name}</b> cargado correctamente.<br>` +
+            `Ahora puedes hacerme preguntas sobre este documento.`;
 
-            <br><br>
-
-            Posibles causas:
-            <br>
-
-            • API caída
-            <br>
-            • Error CORS
-            <br>
-            • Archivo demasiado grande
-            <br>
-            • Backend dormido
-            `;
+    } catch (err) {
+        console.error('[UPLOAD ERROR]', err);
+        uploadMsg.innerHTML =
+            '❌ Error al subir el archivo.<br>' +
+            'Verifica que la API esté activa e inténtalo de nuevo.';
     }
 
-    chatBox.scrollTop =
-        chatBox.scrollHeight;
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 // ==========================
-// Eventos
+// Eventos de la interfaz
 // ==========================
 sendBtn.onclick = enviar;
 
-// Enter enviar
-input.addEventListener(
-    'keypress',
-    (e) => {
+input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') enviar();
+});
 
-        if (e.key === 'Enter') {
-            enviar();
-        }
-    }
-);
-
-// Subir archivo
-fileInput.addEventListener(
-    'change',
-    (e) => {
-
-        const file =
-            e.target.files[0];
-
-        if (file) {
-            uploadFile(file);
-        }
-
-        // Permite volver subir mismo archivo
-        fileInput.value = '';
-    }
-);
+fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) uploadFile(file);
+    fileInput.value = ''; // permite volver a subir el mismo archivo
+});
 
 // ==========================
-// Wake up Render
+// Wake-up Render al cargar
+// Render free duerme tras 15 min de inactividad.
+// Este ping inicial lo despierta y actualiza el indicador.
 // ==========================
-window.addEventListener(
-    'load',
-    async () => {
-
-        try {
-
-            await fetch(
-                `${API_BASE_URL}/health`
-            );
-
-            console.log(
-                '✅ API activa'
-            );
+window.addEventListener('load', async () => {
+    setStatus('loading');
+    try {
+        const res = await fetch(`${API_BASE_URL}/health`);
+        if (res.ok) {
+            setStatus('online');
+            console.log('✅ API activa');
+        } else {
+            setStatus('offline');
+            console.warn('⚠️ API respondió con error:', res.status);
         }
-
-        catch {
-
-            console.log(
-                '⚠️ API dormida o caída'
-            );
-        }
+    } catch {
+        setStatus('offline');
+        console.warn('⚠️ API no disponible');
     }
-);
+});
