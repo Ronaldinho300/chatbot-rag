@@ -1,0 +1,1 @@
+# carga la ia open IA,orquestar internamente el flujo entre LLM + recuperación + memoria + prompts
