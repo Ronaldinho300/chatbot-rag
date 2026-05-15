@@ -5,27 +5,30 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 
-# Importar chatbot
-from chatbot import Chatbot
-
-
-# ======================
-# Cargar .env
-# ======================
+# ==========================
+# Cargar variables .env
+# ==========================
 
 load_dotenv()
 
 
-# ======================
-# Crear app Flask
-# ======================
+# ==========================
+# Import chatbot
+# ==========================
+
+from chatbot import Chatbot
+
+
+# ==========================
+# Crear aplicación Flask
+# ==========================
 
 app = Flask(__name__)
 
 
-# ======================
+# ==========================
 # Configurar CORS
-# ======================
+# ==========================
 
 CORS(
 
@@ -42,9 +45,9 @@ CORS(
 )
 
 
-# ======================
-# Configuración archivos
-# ======================
+# ==========================
+# Configuración uploads
+# ==========================
 
 UPLOAD_FOLDER = os.path.abspath(
 
@@ -81,61 +84,69 @@ os.makedirs(
 )
 
 
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config[
 
-app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
+    "UPLOAD_FOLDER"
 
-
-# ======================
-# Inicializar chatbot
-# ======================
-
-print(
-
-"[INFO] Inicializando chatbot..."
-
-)
+] = UPLOAD_FOLDER
 
 
-try:
+app.config[
+
+    "MAX_CONTENT_LENGTH"
+
+] = MAX_CONTENT_LENGTH
 
 
-    bot = Chatbot()
+# ==========================
+# Lazy loading chatbot
+# ==========================
+
+bot = None
 
 
-    print(
+def obtener_bot():
 
-        "[INFO] Chatbot listo"
-
-    )
+    global bot
 
 
-except Exception as e:
+    if bot is None:
 
 
-    print(
+        print(
 
-        f"[ERROR] {e}"
+            "[INFO] Inicializando chatbot..."
 
-    )
-
-
-    bot = None
+        )
 
 
-# ======================
-# HEALTH
-# ======================
+        bot = Chatbot()
+
+
+        print(
+
+            "[INFO] Chatbot listo"
+
+        )
+
+
+    return bot
+
+
+# ==========================
+# HEALTH CHECK
+# ==========================
 
 @app.route(
 
-"/health",
+    "/health",
 
-methods=["GET"]
+    methods=["GET"]
 
 )
 
 def health():
+
 
     return jsonify(
 
@@ -145,7 +156,8 @@ def health():
 
             "healthy",
 
-            "bot_ready":
+
+            "chatbot":
 
             bot is not None
 
@@ -154,19 +166,20 @@ def health():
     ),200
 
 
-# ======================
+# ==========================
 # INDEX
-# ======================
+# ==========================
 
 @app.route(
 
-"/",
+    "/",
 
-methods=["GET"]
+    methods=["GET"]
 
 )
 
 def index():
+
 
     return jsonify(
 
@@ -175,6 +188,7 @@ def index():
             "nombre":
 
             "Chatbot RAG API",
+
 
             "version":
 
@@ -203,18 +217,18 @@ def index():
 
         }
 
-    )
+    ),200
 
 
-# ======================
-# SUBIR ARCHIVOS
-# ======================
+# ==========================
+# SUBIR ARCHIVO
+# ==========================
 
 @app.route(
 
-"/upload",
+    "/upload",
 
-methods=["POST"]
+    methods=["POST"]
 
 )
 
@@ -224,21 +238,7 @@ def upload():
     try:
 
 
-        if bot is None:
-
-
-            return jsonify(
-
-                {
-
-                    "error":
-
-                    "Chatbot no iniciado"
-
-                }
-
-            ),503
-
+        chatbot = obtener_bot()
 
 
         if "archivo" not in request.files:
@@ -257,7 +257,6 @@ def upload():
             ),400
 
 
-
         archivo = request.files[
 
             "archivo"
@@ -265,8 +264,7 @@ def upload():
         ]
 
 
-
-        if archivo.filename=="":
+        if archivo.filename == "":
 
 
             return jsonify(
@@ -282,7 +280,6 @@ def upload():
             ),400
 
 
-
         extensiones = {
 
             ".pdf",
@@ -294,13 +291,11 @@ def upload():
         }
 
 
-
         extension = os.path.splitext(
 
             archivo.filename
 
         )[1].lower()
-
 
 
         if extension not in extensiones:
@@ -319,7 +314,6 @@ def upload():
             ),400
 
 
-
         ruta = os.path.join(
 
             UPLOAD_FOLDER,
@@ -329,7 +323,6 @@ def upload():
         )
 
 
-
         archivo.save(
 
             ruta
@@ -337,14 +330,11 @@ def upload():
         )
 
 
-
-        bot.cargar_documento(
+        chatbot.cargar_documento(
 
             ruta,
 
-            nombre=
-
-            os.path.splitext(
+            nombre=os.path.splitext(
 
                 archivo.filename
 
@@ -353,14 +343,13 @@ def upload():
         )
 
 
-
         return jsonify(
 
             {
 
                 "mensaje":
 
-                "Documento procesado",
+                "Documento cargado",
 
 
                 "archivo":
@@ -372,7 +361,6 @@ def upload():
         ),200
 
 
-
     except Exception as e:
 
 
@@ -382,56 +370,35 @@ def upload():
 
                 "error":
 
-                str(
-
-                    e
-
-                )
+                str(e)
 
             }
 
         ),500
 
 
-# ======================
+# ==========================
 # CHAT
-# ======================
+# ==========================
 
 @app.route(
 
-"/chat",
+    "/chat",
 
-methods=["POST"]
+    methods=["POST"]
 
 )
 
 def chat():
 
 
-
     try:
 
 
-
-        if bot is None:
-
-
-            return jsonify(
-
-                {
-
-                    "error":
-
-                    "Chatbot no iniciado"
-
-                }
-
-            ),503
-
+        chatbot = obtener_bot()
 
 
         datos = request.get_json()
-
 
 
         if not datos:
@@ -450,7 +417,6 @@ def chat():
             ),400
 
 
-
         pregunta = datos.get(
 
             "pregunta",
@@ -460,8 +426,7 @@ def chat():
         ).strip()
 
 
-
-        if pregunta=="":
+        if pregunta == "":
 
 
             return jsonify(
@@ -477,7 +442,6 @@ def chat():
             ),400
 
 
-
         documento = datos.get(
 
             "documento",
@@ -487,15 +451,13 @@ def chat():
         )
 
 
-
-        respuesta = bot.responder(
+        respuesta = chatbot.responder(
 
             pregunta,
 
             nombre=documento
 
         )
-
 
 
         return jsonify(
@@ -516,7 +478,6 @@ def chat():
         ),200
 
 
-
     except Exception as e:
 
 
@@ -526,32 +487,24 @@ def chat():
 
                 "error":
 
-                str(
-
-                    e
-
-                )
+                str(e)
 
             }
 
         ),500
 
 
-# ======================
-# ERRORS
-# ======================
+# ==========================
+# ERROR 404
+# ==========================
 
 @app.errorhandler(
 
-404
+    404
 
 )
 
-def error404(
-
-e
-
-):
+def error404(e):
 
 
     return jsonify(
@@ -567,18 +520,17 @@ e
     ),404
 
 
+# ==========================
+# ERROR 500
+# ==========================
 
 @app.errorhandler(
 
-500
+    500
 
 )
 
-def error500(
-
-e
-
-):
+def error500(e):
 
 
     return jsonify(
@@ -587,67 +539,52 @@ e
 
             "error":
 
-            "Error servidor"
+            "Error interno servidor"
 
         }
 
     ),500
 
 
-# ======================
+# ==========================
 # EJECUTAR
-# ======================
+# ==========================
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
 
     debug = (
 
         os.getenv(
 
-            "DEBUG",
+            "FLASK_ENV",
 
-            "False"
-
-        ).lower()
-
-        ==
-
-        "true"
-
-    )
-
-
-
-    host = os.getenv(
-
-        "HOST",
-
-        "0.0.0.0"
-
-    )
-
-
-
-    port = int(
-
-        os.getenv(
-
-            "PORT",
-
-            5000
+            "production"
 
         )
 
-    )
+        ==
 
+        "development"
+
+    )
 
 
     app.run(
 
-        host=host,
+        host="0.0.0.0",
 
-        port=port,
+        port=int(
+
+            os.getenv(
+
+                "PORT",
+
+                5000
+
+            )
+
+        ),
 
         debug=debug
 
