@@ -2,38 +2,81 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AsisBot - SENATI 2026</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+    />
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="chat-wrapper">
+
+        <!-- ============================
+             HEADER
+             ============================ -->
         <header>
             <div class="bot-info">
                 <span class="material-symbols-outlined icon-bot">smart_toy</span>
                 <div class="text-info">
                     <h2>AsisBot</h2>
-                    <span class="status">En línea</span>
+                    <!--
+                        id="status-dot"  → el JS cambia data-status
+                                           para cambiar el color del punto
+                        id="status-text" → el JS escribe el texto del estado
+                    -->
+                    <span class="status">
+                        <span id="status-dot" class="status-dot" data-status="loading"></span>
+                        <span id="status-text">Conectando…</span>
+                    </span>
                 </div>
             </div>
         </header>
 
+        <!-- ============================
+             ÁREA DE CHAT
+             ============================ -->
         <div id="chat-content" class="chat-content">
-            <div class="msg bot">¡Hola! Soy tu asistente de SENATI. ¿Tienes dudas sobre el documento?</div>
+            <div class="msg bot">
+                ¡Hola! Soy <b>AsisBot</b>, tu asistente de SENATI 2026.<br>
+                Puedes hacerme preguntas directamente o subir un documento
+                (PDF, TXT o DOCX) para consultarlo.
+            </div>
         </div>
 
+        <!-- ============================
+             INPUT
+             ============================ -->
         <div class="chat-input">
-            <label for="file-upload" class="upload-btn">
+            <!-- Botón subir archivo -->
+            <label for="file-upload" class="upload-btn" title="Subir documento">
                 <span class="material-symbols-outlined">add_circle</span>
             </label>
-            <input type="file" id="file-upload" style="display: none;" accept=".pdf,.txt">
 
-            <input type="text" id="user-input" placeholder="Escribe tu mensaje aquí..." autocomplete="off">
-            
-            <button id="send-btn">
+            <!--
+                ✅ FIX: se añadió .docx al accept
+                El backend soporta PDF, TXT y DOCX.
+            -->
+            <input
+                type="file"
+                id="file-upload"
+                style="display:none;"
+                accept=".pdf,.txt,.docx"
+            >
+
+            <input
+                type="text"
+                id="user-input"
+                placeholder="Escribe tu mensaje aquí…"
+                autocomplete="off"
+            >
+
+            <button id="send-btn" title="Enviar">
                 <span class="material-symbols-outlined">send</span>
             </button>
         </div>
+
     </div>
     <script src="app.js"></script>
 </body>
