@@ -1,11 +1,124 @@
-body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-.chat-wrapper { width: 420px; height: 600px; background: #fff; border-radius: 20px; box-shadow: 0 12px 28px rgba(0,0,0,0.12); display: flex; flex-direction: column; overflow: hidden; }
-header { background: #003366; color: white; padding: 20px; text-align: center; }
-.chat-content { flex: 1; padding: 20px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; gap: 15px; }
-.msg { padding: 12px 16px; border-radius: 18px; max-width: 80%; font-size: 14px; line-height: 1.4; }
-.bot { background: #e4e6eb; color: #050505; align-self: flex-start; border-bottom-left-radius: 4px; }
-.user { background: #0084ff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-.chat-input { padding: 15px; border-top: 1px solid #ddd; display: flex; gap: 10px; background: white; }
-input { flex: 1; border: 1px solid #ddd; border-radius: 25px; padding: 12px 20px; outline: none; }
-button { background: #0084ff; color: white; border: none; border-radius: 25px; padding: 10px 20px; cursor: pointer; font-weight: bold; }
-button:hover { background: #0073e6; }
+/* Configuración General */
+body { 
+    font-family: 'Segoe UI', sans-serif; 
+    background: #f0f2f5; 
+    margin: 0; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+}
+
+/* Contenedor principal */
+.chat-wrapper { 
+    width: 420px; 
+    height: 600px; 
+    background: #fff; 
+    border-radius: 20px; 
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12); 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+}
+
+/* Encabezado con Icono */
+header { 
+    background: #003366; 
+    color: white; 
+    padding: 15px 20px; 
+}
+
+.bot-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.icon-bot {
+    font-size: 35px !important; /* Tamaño del icono del robot */
+}
+
+.text-info h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.status {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* Área de chat */
+.chat-content { 
+    flex: 1; 
+    padding: 20px; 
+    overflow-y: auto; 
+    background: #f9f9f9; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+}
+
+/* Mensajes */
+.msg { 
+    padding: 12px 16px; 
+    border-radius: 18px; 
+    max-width: 80%; 
+    font-size: 14px; 
+    line-height: 1.4; 
+}
+
+.bot { 
+    background: #e4e6eb; 
+    color: #050505; 
+    align-self: flex-start; 
+    border-bottom-left-radius: 4px; 
+}
+
+.user { 
+    background: #0084ff; 
+    color: white; 
+    align-self: flex-end; 
+    border-bottom-right-radius: 4px; 
+}
+
+/* Input y Botón de Enviar */
+.chat-input { 
+    padding: 15px; 
+    border-top: 1px solid #ddd; 
+    display: flex; 
+    gap: 10px; 
+    background: white;
+    align-items: center;
+}
+
+input { 
+    flex: 1; 
+    border: 1px solid #ddd; 
+    border-radius: 25px; 
+    padding: 12px 20px; 
+    outline: none; 
+}
+
+button { 
+    background: #0084ff; 
+    color: white; 
+    border: none; 
+    border-radius: 50%; /* Lo hacemos circular para el icono */
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer; 
+    transition: background 0.3s;
+}
+
+button:hover { 
+    background: #0073e6; 
+}
+
+/* Ajuste para los iconos de Google */
+.material-symbols-outlined {
+    font-size: 24px;
+}
