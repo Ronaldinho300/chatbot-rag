@@ -27,7 +27,7 @@ services:
 
     environment:
 
-      GOOGLE_API_KEY: TU_API_KEY_GEMINI
+      GOOGLE_API_KEY: AIzaSyCvEPY7Sxmyh7sMRo7q9IG9VcvtPe2-EWw
 
 
 

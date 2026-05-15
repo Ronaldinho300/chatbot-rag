@@ -14,7 +14,7 @@ services:
         value: "3.11.7"
       - key: FLASK_ENV
         value: "production"
-      - key: GOOGLE_API_KEY
+      - key: AIzaSyCvEPY7Sxmyh7sMRo7q9IG9VcvtPe2-EWw
         sync: false  # Ingresar manualmente en Render
       - key: PORT
         value: "5000"
