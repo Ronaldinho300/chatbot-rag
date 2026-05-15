@@ -30,3 +30,22 @@ async function enviar() {
 
 sendBtn.onclick = enviar;
 input.onkeypress = (e) => { if(e.key === 'Enter') enviar(); };
+// Lógica para el selector de archivos
+document.getElementById('file-upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const chatContent = document.getElementById('chat-content');
+        
+        // Crear una burbuja de mensaje indicando que se subió un archivo
+        const fileMsg = document.createElement('div');
+        fileMsg.className = 'msg user';
+        fileMsg.innerHTML = `📄 <b>Archivo seleccionado:</b> ${file.name}`;
+        
+        chatContent.appendChild(fileMsg);
+        
+        // Auto-scroll hacia abajo
+        chatContent.scrollTop = chatContent.scrollHeight;
+        
+        console.log("Archivo listo para procesar:", file.name);
+    }
+});

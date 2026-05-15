@@ -122,3 +122,22 @@ button:hover {
 .material-symbols-outlined {
     font-size: 24px;
 }
+/* Estilo para el botón de adjuntar */
+.upload-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0084ff; /* Azul para que combine con el botón enviar */
+    cursor: pointer;
+    transition: color 0.3s, transform 0.2s;
+    padding-right: 5px;
+}
+
+.upload-btn:hover {
+    color: #003366; /* Azul oscuro de SENATI al pasar el mouse */
+    transform: scale(1.1);
+}
+
+.upload-btn .material-symbols-outlined {
+    font-size: 32px; /* Un tamaño cómodo para hacer clic */
+}
