@@ -1,137 +1,57 @@
 # app/LangChain.py
+import google.generativeai as genai
+import os
 
-from langchain_google_generativeai import (
-    ChatGoogleGenerativeAI
-)
-
-from langchain.chains import (
-    RetrievalQA
-)
-
-from langchain.prompts import (
-    PromptTemplate
-)
-
-
-
-def configurar_cadena_rag(
-
-        vector_db):
-
-
+def configurar_cadena_rag(vector_db):
+    """Configura la cadena RAG con búsqueda semántica simple"""
+    
+    # Ruta absoluta al archivo de identidad (dentro del paquete app)
+    base_dir = os.path.dirname(__file__)
+    ruta_identidad = os.path.join(base_dir, "data", "identidad_bot.txt")
+    
     try:
-
-        with open(
-
-            "app/data/identidad_bot.txt",
-
-            "r",
-
-            encoding="utf-8"
-
-        ) as archivo:
-
-
-            instrucciones = (
-
-                archivo.read()
-
-            )
-
-
-    except:
-
-        instrucciones = (
-
-            "Eres un asistente."
-
-        )
-
-
-
-    template = f"""
-
-{instrucciones}
-
+        with open(ruta_identidad, "r", encoding="utf-8") as archivo:
+            instrucciones = archivo.read()
+    except FileNotFoundError:
+        instrucciones = "Eres un asistente útil."
+    
+    # Configurar API key
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+    
+    class CadenaRAG:
+        """Cadena RAG simple sin RetrievalQA"""
+        
+        def __init__(self, vector_db, instrucciones):
+            self.vector_db = vector_db
+            self.instrucciones = instrucciones
+            self.model = genai.GenerativeModel("gemini-1.5-flash")
+        
+        def run(self, pregunta):
+            """Ejecutar consulta RAG"""
+            try:
+                docs = self.vector_db.similarity_search(pregunta, k=3)
+                contexto = "\n".join([doc.page_content for doc in docs])
+                
+                prompt = f"""{self.instrucciones}
 
 Contexto:
-
-{{context}}
-
+{contexto}
 
 Pregunta:
-
-{{question}}
-
+{pregunta}
 
 Respuesta:
-
 """
-
-
-    prompt = PromptTemplate(
-
-        template=template,
-
-        input_variables=[
-
-            "context",
-
-            "question"
-
-        ]
-
-    )
-
-
-
-    llm = (
-
-        ChatGoogleGenerativeAI(
-
-            model=
-
-            "gemini-1.5-flash",
-
-            temperature=0
-
-        )
-
-    )
-
-
-
-    chain = (
-
-        RetrievalQA.from_chain_type(
-
-            llm=llm,
-
-            chain_type="stuff",
-
-            retriever=
-
-            vector_db.as_retriever(
-
-                search_kwargs={
-
-                    "k":3
-
-                }
-
-            ),
-
-            chain_type_kwargs={
-
-                "prompt":
-
-                prompt
-
-            }
-
-        )
-
-    )
-
-
-    return chain
+                response = self.model.generate_content(prompt)
+                return response.text if response else "No se pudo generar respuesta"
+            except Exception as e:
+                return f"Error: {str(e)}"
+        
+        def invoke(self, inputs):
+            """Compatibilidad con LangChain"""
+            query = inputs.get("query", "")
+            return {"result": self.run(query)}
+    
+    return CadenaRAG(vector_db, instrucciones)

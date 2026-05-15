@@ -1,96 +1,24 @@
-#Guardar embeddings y hacer búsqueda semántica.
-# app/vectorstore.py# app/vectorstore.py
-# app/vectorstore.py
-
-from langchain_community.vectorstores import FAISS
-
+# app/data/vectorstores/vectorstore.py
 import os
-
-
+from langchain_community.vectorstores import FAISS
+from langchain.schema import Document
 
 class VectorStore:
+    def __init__(self, base_dir="app/data/vectorstores"):
+        self.base_dir = base_dir
+        os.makedirs(base_dir, exist_ok=True)
 
-
-
-    def guardar(
-
-            self,
-
-            textos,
-
-            embeddings,
-
-            nombre):
-
-
-
-        db = (
-
-            FAISS.from_texts(
-
-                textos,
-
-                embeddings.modelo
-
-            )
-
-        )
-
-
-        ruta = (
-
-f"app/data/vectorstores/{nombre}"
-
-        )
-
-
-        db.save_local(
-
-            ruta
-
-        )
-
-
+    def guardar(self, textos, embeddings, nombre="documento"):
+        """Guarda los textos vectorizados en un índice FAISS"""
+        docs = [Document(page_content=t) for t in textos]
+        db = FAISS.from_documents(docs, embeddings)
+        ruta = os.path.join(self.base_dir, nombre)
+        db.save_local(ruta)
         return db
 
-
-
-    def cargar(
-
-            self,
-
-            embeddings,
-
-            nombre):
-
-
-
-        ruta = (
-
-f"app/data/vectorstores/{nombre}"
-
-        )
-
-
-        if not os.path.exists(
-
-                ruta):
-
-
-            return None
-
-
-
-        return (
-
-            FAISS.load_local(
-
-                ruta,
-
-                embeddings.modelo,
-
-                allow_dangerous_deserialization=True
-
-            )
-
-        )
+    def cargar(self, embeddings, nombre="documento"):
+        """Carga un índice FAISS existente"""
+        ruta = os.path.join(self.base_dir, nombre)
+        if not os.path.exists(ruta):
+            raise FileNotFoundError(f"No existe almacén para '{nombre}'")
+        return FAISS.load_local(ruta, embeddings, allow_dangerous_deserialization=True)
