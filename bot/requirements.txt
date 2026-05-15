@@ -1,0 +1,36 @@
+# ── Índice CPU-only de PyTorch ─────────────────────────────────
+# Debe ir PRIMERO para que pip resuelva torch desde aquí
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# ── Web framework ──────────────────────────────────────────────
+Flask==3.0.0
+flask-cors==4.0.0
+python-dotenv==1.0.0
+Werkzeug==3.0.1
+gunicorn==21.2.0
+
+# ── Parsers de documentos ──────────────────────────────────────
+pypdf==4.0.1
+python-docx==0.8.11
+
+# ── LangChain ─────────────────────────────────────────────────
+langchain==0.1.20
+langchain-community==0.0.38
+langchain-huggingface==0.0.3
+
+# ── Vector store ───────────────────────────────────────────────
+faiss-cpu==1.7.4
+
+# ── Embeddings ─────────────────────────────────────────────────
+sentence-transformers==2.7.0
+
+# ── Torch CPU-only ─────────────────────────────────────────────
+# El sufijo +cpu fuerza la versión sin CUDA (ahorra ~1.5 GB)
+torch==2.2.2+cpu
+torchvision==0.17.2+cpu
+
+# ── Gemini API ─────────────────────────────────────────────────
+google-generativeai==0.3.0
+
+# ── Utils ──────────────────────────────────────────────────────
+numpy==1.26.4

@@ -1,0 +1,34 @@
+version: "3.9"
+
+
+services:
+
+
+  chatbot:
+
+
+    build: .
+
+
+    container_name: chatbot_rag
+
+
+    ports:
+
+      - "5000:5000"
+
+
+
+    volumes:
+
+      - .:/app
+
+
+
+    environment:
+
+      GOOGLE_API_KEY: AIzaSyCvEPY7Sxmyh7sMRo7q9IG9VcvtPe2-EWw
+
+
+
+    restart: always
