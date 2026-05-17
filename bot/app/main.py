@@ -1,9 +1,3 @@
-# app/main.py
-
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -18,7 +12,7 @@ load_dotenv()
 # ==========================
 # Import chatbot
 # ==========================
-from chatbot import Chatbot
+from app.chatbot import Chatbot
 
 # ==========================
 # Crear aplicación Flask
@@ -55,8 +49,9 @@ def after_request(response):
 # ==========================
 # Configuración uploads
 # ==========================
+DEFAULT_UPLOAD_FOLDER = os.path.join(os.getcwd(), "data", "uploads")
 UPLOAD_FOLDER = os.path.abspath(
-    os.getenv("UPLOAD_FOLDER", "app/data/uploads")
+    os.getenv("UPLOAD_FOLDER", DEFAULT_UPLOAD_FOLDER)
 )
 
 MAX_CONTENT_LENGTH = int(

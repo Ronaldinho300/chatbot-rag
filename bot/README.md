@@ -1,13 +1,13 @@
 # 🤖 Chatbot RAG API
 
-Una API REST de Chatbot basada en Recuperación Aumentada por Generación (RAG) que permite cargar documentos (PDF, TXT, DOCX) y responder preguntas basadas en su contenido usando Google Generative AI.
+Una API REST de Chatbot basada en Recuperación Aumentada por Generación (RAG) que permite cargar documentos (PDF, TXT, DOCX) y responder preguntas basadas en su contenido usando Groq Llama 3.3.
 
 ## 🎯 Características
 
 - ✅ Carga de documentos en múltiples formatos (PDF, TXT, DOCX)
 - ✅ Vectorización automática usando embeddings de HuggingFace
 - ✅ Búsqueda semántica con FAISS
-- ✅ Respuestas generadas con Google Generative AI (Gemini)
+- ✅ Respuestas generadas con Groq Llama 3.3
 - ✅ API REST con documentación clara
 - ✅ CORS habilitado para clientes web
 - ✅ Manejo robusto de errores
@@ -16,7 +16,7 @@ Una API REST de Chatbot basada en Recuperación Aumentada por Generación (RAG) 
 ## 📋 Requisitos Previos
 
 - Python 3.11 o superior
-- Google API Key (para Generative AI)
+- Groq API Key (para Llama 3.3)
 - pip o conda para gestión de paquetes
 
 ## 🚀 Instalación Local
@@ -43,13 +43,15 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Este proyecto usa paquetes modulares de LangChain en lugar del paquete completo para instalar solo lo necesario y reducir consumo de almacenamiento y recursos.
+
 ### 4. Configurar variables de entorno
 ```bash
 # Copiar el archivo de ejemplo
 cp .env.example .env
 
-# Editar .env y agregar tu Google API Key
-# GOOGLE_API_KEY=tu_clave_aqui
+# Editar .env y agregar tu Groq API Key
+# GROQ_API_KEY=tu_clave_aqui
 ```
 
 ### 5. Ejecutar la API
@@ -193,7 +195,7 @@ chatbot-rag/
    - En la sección "Environment"
    - Agregar:
      ```
-     GOOGLE_API_KEY=tu_clave_aqui
+     GROQ_API_KEY=tu_clave_aqui
      FLASK_ENV=production
      ```
 
@@ -211,7 +213,7 @@ chatbot-rag/
        env: docker
        dockerfilePath: ./Dockerfile
        envVars:
-         - key: GOOGLE_API_KEY
+         - key: GROQ_API_KEY
            sync: false
    ```
 
@@ -228,17 +230,17 @@ services:
     command: "python scripts/cleanup.py"
 ```
 
-## 🔐 Configuración de Google Generative AI
+## 🔐 Configuración de Groq Llama 3.3
 
 1. **Obtener API Key:**
-   - Ve a https://makersuite.google.com/app/apikey
-   - Click en "Get API Key"
-   - Crea una nueva clave
+   - Ve a https://groq.com
+   - Inicia sesión en tu cuenta de Groq
+   - Crea una nueva clave de API
    - Cópiala en tu `.env`
 
 2. **Configuración:**
    ```env
-   GOOGLE_API_KEY=AIzaSyDxxxxxxxxxxxxxxxx
+   GROQ_API_KEY=tu_clave_aqui
    ```
 
 ## 📝 Ejemplo de Uso
@@ -313,7 +315,7 @@ docker build -t chatbot-rag .
 
 # Run
 docker run -p 5000:5000 \
-  -e GOOGLE_API_KEY="tu_clave_aqui" \
+  -e GROQ_API_KEY="tu_clave_aqui" \
   chatbot-rag
 
 # Con Docker Compose
@@ -343,13 +345,13 @@ curl -X POST http://localhost:5000/chat \
 
 - **Tamaño máximo de archivo**: 50MB (configurable en `.env`)
 - **Máximo de documentos similares**: 3
-- **Modelo LLM**: Gemini 1.5 Flash
+- **Modelo LLM**: Groq Llama 3.3
 - **Modelo de embeddings**: sentence-transformers/all-MiniLM-L6-v2
 
 ## ⚠️ Notas Importantes
 
 1. **API Key**: Nunca commits la `.env` real. Siempre usa `.env.example`
-2. **Limite de rate**: Google Generative AI tiene límites de uso
+2. **Límites de uso**: Groq Llama 3.3 tiene límites gratuitos y de rate.
 3. **Almacenamiento**: Los documentos se guardan localmente. En producción, considera usar S3
 4. **Escalabilidad**: Para múltiples usuarios, considera usar caché y cola de trabajos
 
@@ -360,7 +362,7 @@ curl -X POST http://localhost:5000/chat \
 pip install --upgrade -r requirements.txt
 ```
 
-### Error: "GOOGLE_API_KEY not found"
+### Error: "GROQ_API_KEY not found"
 ```bash
 # Verificar que .env está configurado correctamente
 cat .env
@@ -383,4 +385,4 @@ MIT License - ver archivo LICENSE
 
 ---
 
-**Desarrollado con ❤️ usando Flask, LangChain y Google Generative AI**
+**Desarrollado con ❤️ usando Flask, paquetes modulares de LangChain y Groq Llama 3.3**
