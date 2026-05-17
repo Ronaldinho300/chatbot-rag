@@ -1,12 +1,13 @@
 # app/data/vectorstores/vectorstore.py
 import os
 from langchain_community.vectorstores import FAISS
-from langchain.schema import Document
+from langchain_core.documents import Document
+
 
 class VectorStore:
-    def __init__(self, base_dir="app/data/vectorstores"):
-        self.base_dir = base_dir
-        os.makedirs(base_dir, exist_ok=True)
+    def __init__(self, base_dir=None):
+        self.base_dir = base_dir or os.path.join(os.getcwd(), "data", "vectorstores")
+        os.makedirs(self.base_dir, exist_ok=True)
 
     def guardar(self, textos, embeddings, nombre="documento"):
         """Guarda los textos vectorizados en un índice FAISS"""

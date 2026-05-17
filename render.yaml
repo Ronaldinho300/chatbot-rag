@@ -2,22 +2,16 @@ services:
   - type: web
     name: chatbot-rag
     env: python
-    
-    # Build configuration
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT app.main:app
-    
-    # Service configuration
     plan: free
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.7"
       - key: FLASK_ENV
         value: "production"
-      - key: AIzaSyCvEPY7Sxmyh7sMRo7q9IG9VcvtPe2-EWw
-        sync: false  # Ingresar manualmente en Render
+      - key: GROQ_API_KEY
+        sync: false   # Ingresar manualmente en el dashboard de Render
       - key: PORT
         value: "5000"
-    
-    # Health check
     healthCheckPath: /health

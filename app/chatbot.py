@@ -1,10 +1,10 @@
 # app/chatbot.py
 
-from loaders import Loader
-from embeddings import Embeddings
-from data.vectorstores.vectorstore import VectorStore
-from LangChain import configurar_cadena_rag
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from app.loaders import Loader
+from app.embeddings import Embeddings
+from app.data.vectorstores.vectorstore import VectorStore
+from app.LangChain import configurar_cadena_rag
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 class Chatbot:

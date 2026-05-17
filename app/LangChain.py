@@ -1,62 +1,51 @@
-# app/LangChain.py
-
-import google.generativeai as genai
 import os
+
+from groq import Groq
 
 
 def configurar_cadena_rag(vector_db=None):
     """
-    Construye la cadena de respuesta.
-
-    · vector_db=None  → modo IDENTIDAD: responde sólo con las
-                        instrucciones del bot (saludos, quién eres…).
-    · vector_db=<obj> → modo RAG: busca contexto en el vectorstore
-                        y lo añade al prompt.
+    Construye la cadena de respuesta con Groq (Llama).
+    - vector_db=None -> modo identidad
+    - vector_db=<obj> -> modo RAG
     """
 
-    # ==========================
-    # Leer identidad del bot
-    # ==========================
-    base_dir = os.path.dirname(__file__)
-    ruta_identidad = os.path.join(base_dir, "identidad_bot.txt")
+    possible_paths = [
+        os.path.join(os.getcwd(), "data", "identidad_bot.txt"),
+        os.path.join(os.path.dirname(__file__), "data", "identidad_bot.txt"),
+        os.path.join(os.path.dirname(__file__), "identidad_bot.txt"),
+    ]
 
-    try:
-        with open(ruta_identidad, "r", encoding="utf-8") as f:
-            instrucciones = f.read()
-    except FileNotFoundError:
-        instrucciones = "Eres un asistente útil y amable."
+    instrucciones = "Eres un asistente util y amable."
+    for ruta_identidad in possible_paths:
+        if os.path.exists(ruta_identidad):
+            with open(ruta_identidad, "r", encoding="utf-8") as file:
+                instrucciones = file.read()
+            break
 
-    # ==========================
-    # Configurar API de Gemini
-    # ==========================
-    api_key = os.getenv("GOOGLE_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise ValueError("GOOGLE_API_KEY no está configurada")
+        raise ValueError("GROQ_API_KEY no esta configurada")
 
-    genai.configure(api_key=api_key)
+    cliente = Groq(api_key=api_key)
 
-    # ==========================
-    # Clase interna de la cadena
-    # ==========================
     class CadenaRAG:
-
-        def __init__(self, vector_db, instrucciones):
-            self.vector_db = vector_db          # None si modo identidad
+        def __init__(self, vector_db, instrucciones, cliente):
+            self.vector_db = vector_db
             self.instrucciones = instrucciones
-            self.model = genai.GenerativeModel("gemini-1.5-flash")
+            self.cliente = cliente
+            self.modelo = "llama-3.3-70b-instant"
 
         def run(self, pregunta: str) -> str:
             try:
-                # ── Modo RAG: hay documento cargado ──────────────────
                 if self.vector_db is not None:
                     docs = self.vector_db.similarity_search(pregunta, k=3)
-                    contexto = "\n".join(d.page_content for d in docs)
-
+                    contexto = "\n".join(doc.page_content for doc in docs)
                     prompt = f"""{self.instrucciones}
 
-A continuación tienes fragmentos del documento que el usuario ha cargado.
-Úsalos para responder con precisión. Si la respuesta no está en el documento,
-indícalo amablemente.
+A continuacion tienes fragmentos del documento que el usuario ha cargado.
+Usalos para responder con precision. Si la respuesta no esta en el documento,
+indicalo amablemente.
 
 Contexto del documento:
 {contexto}
@@ -65,28 +54,34 @@ Pregunta del usuario:
 {pregunta}
 
 Respuesta:"""
-
-                # ── Modo identidad: sin documento ─────────────────────
                 else:
                     prompt = f"""{self.instrucciones}
 
-El usuario aún no ha cargado ningún documento.
-Responde de forma amable y ofrécele la posibilidad de subir un archivo
-(PDF, TXT o DOCX) para que puedas ayudarle con preguntas específicas.
+El usuario aun no ha cargado ningun documento.
+Responde de forma amable y ofrecele la posibilidad de subir un archivo
+(PDF, TXT o DOCX) para que puedas ayudarle con preguntas especificas.
 
 Pregunta del usuario:
 {pregunta}
 
 Respuesta:"""
 
-                response = self.model.generate_content(prompt)
-                return response.text if response else "No se pudo generar respuesta."
+                response = self.cliente.chat.completions.create(
+                    model=self.modelo,
+                    messages=[
+                        {"role": "system", "content": self.instrucciones},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.7,
+                    max_tokens=2048,
+                )
 
-            except Exception as e:
-                return f"Error al generar respuesta: {str(e)}"
+                return response.choices[0].message.content
+            except Exception as exc:
+                return f"Error al generar respuesta: {exc}"
 
         def invoke(self, inputs: dict) -> dict:
             query = inputs.get("query", "")
             return {"result": self.run(query)}
 
-    return CadenaRAG(vector_db, instrucciones)
+    return CadenaRAG(vector_db, instrucciones, cliente)

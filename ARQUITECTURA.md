@@ -48,7 +48,7 @@ Usuario hace pregunta
     → VectorStore.cargar(embeddings)
       → Carga vectores de FAISS
     → Cadena RAG busca contexto similar
-    → LLM (Gemini) responde con identidad del bot
+    → LLM (Groq Llama 3.3) responde con identidad del bot
     → Devuelve respuesta
 ```
 
@@ -73,7 +73,7 @@ Usuario hace pregunta
 ### LangChain.py
 - **configurar_cadena_rag()**: Configura la cadena RAG
 - Carga identidad_bot.txt como instrucciones
-- Usa `ChatGoogleGenerativeAI` (Gemini 1.5 Flash)
+- Usa Groq Llama 3.3
 - Recupera top 3 documentos similares
 - Usa `RetrievalQA` para responder basado en contexto
 
@@ -120,14 +120,14 @@ Response:
 
 ## Variables de Entorno Requeridas
 
-- `GOOGLE_API_KEY`: Para autenticar con Gemini API
+- `GROQ_API_KEY`: Para autenticar con Groq API
 
 ## Dependencias
 
 - flask
 - langchain
 - langchain-community
-- langchain-google-generativeai
+- groq
 - langchain-huggingface
 - faiss-cpu (o faiss-gpu)
 - pypdf
