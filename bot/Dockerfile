@@ -33,7 +33,7 @@ RUN mkdir -p app/data/uploads app/data/vectorstores && \
 
 # ── Healthcheck ────────────────────────────────────────────────
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" || exit 1
+    CMD python -c "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://localhost:5000/health').getcode() == 200 else 1)"
 
 EXPOSE 5000
 
@@ -41,5 +41,4 @@ EXPOSE 5000
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
-CMD ["gunicorn", "-w", "1", "--timeout", "120", \
-     "--bind", "0.0.0.0:5000", "app.main:app"]
+CMD ["gunicorn", "-w", "1", "--timeout", "120", "--bind", "0.0.0.0:5000", "app.main:app"]

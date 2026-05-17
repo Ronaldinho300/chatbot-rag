@@ -83,16 +83,17 @@ def obtener_bot():
 def health():
     if request.method == "OPTIONS":
         return jsonify({"ok": True}), 200
-    try:
-        bot_instance = obtener_bot()
-        bot_ready = bot_instance is not None
-    except Exception as e:
-        print("[ERROR HEALTH]", str(e))
-        bot_ready = False
+
+    # El healthcheck debe ser liviano: solo confirma que Flask esta arriba
+    # y reporta si la configuracion minima del bot parece disponible.
+    groq_configurada = bool(os.getenv("GROQ_API_KEY"))
+    bot_inicializado = bot is not None
 
     return jsonify({
         "status": "healthy",
-        "chatbot": bot_ready
+        "service": "chatbot-rag",
+        "bot_initialized": bot_inicializado,
+        "groq_api_key_configured": groq_configurada
     }), 200
 
 # ==========================

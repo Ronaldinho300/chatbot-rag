@@ -28,3 +28,9 @@ web/
 ├── index.html   # Estructura principal y enlace a librerías de iconos.
 ├── styles.css   # Definición de colores institucionales y diseño de burbujas.
 └── app.js       # Captura de eventos (clics, teclas) y conexión con la API.
+
+## Comandos de docker
+ debes estar en la carpeta de bot cd "D:\CURSOS\Quinto semestre\MLtaller\chatbot-rag\bot"
+
+docker build -t chatbot-rag .
+docker run --rm -p 5000:5000 --env-file .env chatbot-rag
