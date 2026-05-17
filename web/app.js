@@ -1,7 +1,7 @@
 // ==========================
 // URL API
 // ==========================
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://chatbot-rag-2-tzn4.onrender.com';
 
 // ==========================
 // Estado del documento actual
