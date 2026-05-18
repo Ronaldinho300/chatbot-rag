@@ -34,7 +34,7 @@ def configurar_cadena_rag(vector_db=None):
             self.vector_db = vector_db
             self.instrucciones = instrucciones
             self.cliente = cliente
-            self.modelo = "llama-3.3-70b-instant"
+            self.modelo = os.getenv("GROQ_MODEL", "mixtral-8x7b-32768")
 
         def run(self, pregunta: str) -> str:
             try:
